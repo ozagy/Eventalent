@@ -1,4 +1,10 @@
 Eventalent::Application.routes.draw do
+  root :to => "pages#index"
+  get 'auth/:provider/callback', to: 'sessions#create', as: 'signin'
+  get 'auth/failure', to: redirect('/')
+  get 'signout', to: 'sessions#destroy', as: 'signout'
+  post 'login' => 'pages#login'
+  get "event/:id", to: 'pages#event', as: 'event'
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
