@@ -1,15 +1,59 @@
 <!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+
+<html class="no-js">
+<!--<![endif]-->
+
 <html>
 <head>
   <title>Eventalent</title>
   <%= stylesheet_link_tag    "application", media: "all", "data-turbolinks-track" => true %>
   <%= javascript_include_tag "application", "data-turbolinks-track" => true %>
   <%= javascript_include_tag "facebook" %>
+  <%= stylesheet_link_tag "bootstrap" %>
+  <%= stylesheet_link_tag "main"%>
+  <%= yield :css %>
   <%= csrf_meta_tags %>
 </head>
 <body>
-
+	<div class="header-div">
+        <div class="header-inner">
+            <a href="" rel="home"><%= image_tag "logo.png", :class => 'logo-image' %></a>
+            <div class="nav-div">
+                <ul class="nav">
+                    <a href=""><li class="nav-item">
+                        HOME
+                    </li></a>
+                    <a href=""><li class="nav-item">
+                        DOCUMENTATION
+                    </li></a>
+                </ul>
+            </div><!--/.nav-collapse -->
+            <div id="user-widget">
+			  <% if @current_user %>
+			    Welcome <strong><%= @current_user.name %></strong>!
+			    <a class='sign' id='sign-out'>Sign out</a>
+			  <% else %>
+			    <a class='sign' id='sign-in'>Sign in</a>
+			  <% end %>
+			</div>
+        </div>
+    </div><!-- content begin -->
+    
 <%= yield %>
+
+    <div class="footer">
+    	<%= image_tag "footerlogo.png", :class => 'logo-footer' %>
+		<div class='credit'>
+			Copyright© 2013-2014 Eventalent | All Rights Reserved
+		</div>
+    </div> 
+
+     
+    </div><!-- /container -->
 
 </body>
 </html>

@@ -1,4 +1,106 @@
-<h1>Welcome</h1>
-<p>Find me in app/views/pages/welcome.html.erb</p>
+<% content_for :css do %>
+<style>
+.intro-title{
+	margin-top:30px;
+}
+.intro-text{
+	color:#555;
+}
+#intro-div{
+	margin-top:40px;
+}
 
-<p id='sign_in'> Login via Facebook </p>
+.button-custom {
+	-moz-box-shadow: 0px 1px 2px 0px #222;
+	-webkit-box-shadow: 0px 1px 2px 0px #222;
+	box-shadow: 0px 1px 2px 0px #222;
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #7ea679), color-stop(1, #598253) );
+	background:-moz-linear-gradient( center top, #7ea679 5%, #598253 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#7ea679', endColorstr='#598253');
+	background-color:#7ea679;
+	-webkit-border-top-left-radius:6px;
+	-moz-border-radius-topleft:6px;
+	border-top-left-radius:6px;
+	-webkit-border-top-right-radius:6px;
+	-moz-border-radius-topright:6px;
+	border-top-right-radius:6px;
+	-webkit-border-bottom-right-radius:6px;
+	-moz-border-radius-bottomright:6px;
+	border-bottom-right-radius:6px;
+	-webkit-border-bottom-left-radius:6px;
+	-moz-border-radius-bottomleft:6px;
+	border-bottom-left-radius:6px;
+	text-indent:0;
+	display:inline-block;
+	color:#ffffff;
+	font-family:"gotham_bookregular";
+	font-size:15px;
+	font-weight:bold;
+	font-style:normal;
+	height:38px;
+	line-height:38px;
+	width:250px;
+	text-decoration:none;
+	text-align:center;
+	text-shadow:1px 1px 0px #666666;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+}
+.button-custom:hover {
+	cursor:pointer;
+	color:#fff;
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #598253), color-stop(1, #7ea679) );
+	background:-moz-linear-gradient( center top, #598253 5%, #7ea679 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#598253', endColorstr='#7ea679');
+	background-color:#598253;
+}.button-custom:active {
+	position:relative;
+	top:1px;
+}
+
+</style>
+<% end %>
+
+<div class="home-hero">
+   <div class="row-fluid">
+        <div class="span1 hidden-phone"></div>
+
+        <div class="span10">
+            <h1 class="hero">Knowing your facebook events with ease</h1>
+
+            <p id="herosubhead">Help you learn more about <strong>your events</strong> and  
+            <strong>participants!</strong> </p>
+            <p id="sign-in-large" class="button-custom">Sign in via Facebook</p>
+        </div>
+        <div class="span1 hidden-phone">
+        </div>
+    </div>
+</div>
+
+<div class="extendfull" id="">               
+  
+    <div class="row-fluid" id="intro-div" >
+    	<div class='row-wrapper'>
+        <div class="span4">
+        	<%= image_tag "PIC3-2.png", :class=>'intro-img'%>
+
+            <h3 class="leftalign intro-title">Visualizing event networks</h3>
+            <p class="leftalign intro-text">See the beautiful network structures visualized of your events.</p>
+        </div>
+
+        <div class="span4">
+        	<%= image_tag "back1.png", :class=>'intro-img' %>
+
+            <h3 class="leftalign intro-title">Finding the right person</h3>
+            <p class="leftalign intro-text">Find the central persons in your events and make friends with them!</p>
+        </div>
+
+        <div class="span4">
+        	<%= image_tag "back2.png", :class=>'intro-img' %>
+
+            <h3 class="leftalign intro-title">Grouping event participants</h3>
+            <p class="leftalign intro-text">Know the groups of people in the events based on hierarchical clustering.</p>
+        </div>
+    </div>
+</div>
