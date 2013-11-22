@@ -17,5 +17,5 @@ window.fbAsyncInit = ->
 
   $('#sign-out').click (e) ->
     FB.getLoginStatus (response) ->
-      FB.logout() if response.authResponse
-    true
+      FB.logout (response) if response.authResponse
+  true
