@@ -1,2 +1,89 @@
-<h1>Pages#index</h1>
-<p>Find me in app/views/pages/index.html.erb</p>
+<% content_for :title do %>
+<title>Eventalent - Events</title>
+<% end %>
+
+<% content_for :css do %>
+<style>
+.events_container{
+	width:75%;
+	min-width:900px;
+	min-height:600px;
+	margin: 0px auto 0px;
+	padding-top:100px;
+}
+
+#eventsTable{
+	width:100%;
+	border-collapse:separate;
+	border-spacing:4px 10px;
+}
+#eventsTable tr td{
+	padding:0 8px 0 8px;
+	height:60px;
+	text-align: center;
+	font-size:15px;
+	background:rgba(196,233,155,0.5);
+	-webkit-transition: background-color 0.3s ease-in-out;
+	-moz-transition: background-color 0.3s ease-in-out; 
+	-o-transition: background-color 0.3s ease-in-out; 
+	-ms-transition: background-color 0.3s ease-in-out;
+}
+#eventsTable tr td.left{
+	border-top-left-radius:5px;
+	-moz-border-top-left-radius:5px;
+	-webkit-border-top-left-radius:5px;
+	border-bottom-left-radius:5px;
+	-moz-border-bottom-left-radius:5px;
+	-webkit-border-bottom-left-radius:5px;
+}
+#eventsTable tr td.right{
+	border-top-right-radius:5px;
+	-moz-border-top-right-radius:5px;
+	-webkit-border-top-right-radius:5px;
+	border-bottom-right-radius:5px;
+	-moz-border-bottom-right-radius:5px;
+	-webkit-border-bottom-right-radius:5px;
+}
+#eventsTable tr:hover td{
+	background:rgba(102,144,97,1);
+	color: #fff;
+	cursor:pointer;
+}
+</style>
+<% end %>
+
+
+<div class='extentfull'>
+  <div class='events_container'>
+  	<h2 style='color:#666'>MY EVENTS</h2>
+  	<table id='eventsTable'>
+	  <tr>
+	  	<th>RSVP</th>
+	    <th>Name</th>
+	    <th>Creator</th>
+	    <th>Start Time</th>
+	  </tr>
+	
+	  <% @events.each do |event| %>
+		  <tr event='event/<%= event['eid'] %>' class='events_row'>
+		  	<td class='left'><%= event['rsvp_status'] %></td>
+		    <td><%= event['name'] %></td>
+		    <td><%='<b>' if event['creator_friend'] %><%= event['creator_name'] %><%='</b>' if event['creator_friend'] %></td>
+		    <td class='right'><%= event['start_time'] %></td>
+		  </tr>
+	  <% end %>
+	</table>
+  </div>
+</div>
+
+<script>
+(function() {
+  $(function() {
+    $('.events_row').click(function(){
+      var path = $(this).attr('event');
+      window.location = path;
+    });
+  });
+
+}).call(this);
+</script>
