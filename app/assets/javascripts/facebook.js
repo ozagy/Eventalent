@@ -32,6 +32,7 @@
     $('#sign-out').click(function(e) {
       window.location = '/signout';
     });
+    refresh_fb();
     return true;
   };
 

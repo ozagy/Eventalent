@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<!-- saved from url=(0076)http://threejsdoc.appspot.com/doc/three.js/examples/canvas_lines_sphere.html -->
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Eventalent - Event</title>
+		<%= javascript_include_tag "application" %>
+  		<%= javascript_include_tag "facebook" %>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			a {
+				color:#0078ff;
+			}
+		</style>
+	</head>
+	<body>
+		<script>
+		function refresh_fb(){
+		    <% if @error %> 
+		      FB.login(function(response) {
+		        if (response.authResponse) {
+		          console.log(response);
+		          window.location = '/auth/facebook/callback';
+		        }
+		      },{scope: 'user_friends,user_events,friends_events'});
+		    <% end %>
+	    }
+    	</script>
+		<%= javascript_include_tag "Three.js" %>
+		<%= javascript_include_tag "OrbitControls.js" %>
+		<%= javascript_include_tag "RequestAnimationFrame.js" %>
+
+		<script>
+
+			var SCREEN_WIDTH = window.innerWidth,
+			SCREEN_HEIGHT = window.innerHeight,
+
+			mouseX = 0, mouseY = 0,
+
+			windowHalfX = window.innerWidth / 2,
+			windowHalfY = window.innerHeight / 2,
+
+			SEPARATION = 200,
+			AMOUNTX = 10,
+			AMOUNTY = 10,
+
+			camera, scene, renderer, controls;
+
+			init();
+			animate();
+
+			function init() {
+
+				var container, separation = 100, amountX = 50, amountY = 50,
+				particles, particle;
+
+				container = document.createElement('div');
+				document.body.appendChild(container);
+
+				camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 10000 );
+				camera.position.z = 1000;
+
+				scene = new THREE.Scene();
+
+				renderer = new THREE.CanvasRenderer();
+				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+				container.appendChild(renderer.domElement);
+
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				// // particles
+// 
+				// var PI2 = Math.PI * 2;
+				// var material = new THREE.ParticleCanvasMaterial( {
+// 
+					// color: 0xffffff,
+					// program: function ( context ) {
+// 
+						// context.beginPath();
+						// context.arc( 0, 0, 1, 0, PI2, true );
+						// context.closePath();
+						// context.fill();
+// 
+					// }
+// 
+				// } );
+// 
+				// for ( var i = 0; i < 1000; i ++ ) {
+// 
+					// particle = new THREE.Particle( material );
+					// particle.position.x = Math.random() * 2 - 1;
+					// particle.position.y = Math.random() * 2 - 1;
+					// particle.position.z = Math.random() * 2 - 1;
+					// particle.position.normalize();
+					// particle.position.multiplyScalar( Math.random() * 10 + 450 );
+					// scene.add( particle );
+// 
+				// }
+
+				// lines
+
+				var geometry = {};
+				var vector = {};
+				var vector2 = {};
+				var line = {};
+				<% @connections.each do |c| %>
+					geometry = new THREE.Geometry();
+
+					vector = new THREE.Vector3( <%= @pos[c[:uid1]][:x]%>, <%= @pos[c[:uid1]][:y]%>, <%= @pos[c[:uid1]][:z]%> );
+					geometry.vertices.push( new THREE.Vertex( vector ) );
+
+					vector2 = new THREE.Vector3( <%= @pos[c[:uid2]][:x]%>, <%= @pos[c[:uid2]][:y]%>, <%= @pos[c[:uid2]][:z]%> );
+					geometry.vertices.push( new THREE.Vertex( vector2 ) );
+
+					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: Math.random()*0.1+0.15 } ) );
+					scene.add( line );
+				<% end %>
+				// sphere
+				var sphere = {}
+				var spriteMaterial = {}
+				var uid = 0;
+				canvas = {};
+				context = {};
+				texture = {};
+				sprite = {};
+				
+				<% @members.each do |m| %>
+				  sphere = new THREE.Mesh(new THREE.SphereGeometry(8, 5, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.5 }));
+			      sphere.position.x = <%= @pos[m['uid']][:x] %>
+			      sphere.position.y = <%= @pos[m['uid']][:y] %>
+			      sphere.position.z = <%= @pos[m['uid']][:z] %>
+			      scene.add(sphere);
+			      
+			      var uid =<%= m['uid'] %>;
+					// create a canvas element
+			      canvas[uid] = document.createElement('canvas');
+				  context[uid] = canvas[uid].getContext('2d');
+				  context[uid].font = "Bold 20px Arial";
+				  
+				  var message = '<%= m['name'] %>';
+				  var metrics = context[uid].measureText(message);
+				  var width = metrics.width;
+				  context[uid].fillStyle = "rgba(0,0,0,0.95)"; // black border
+				  context[uid].fillRect( 0,0, width+8,20+8);
+				  context[uid].fillStyle = "rgba(255,255,255,0.95)"; // white filler
+				  context[uid].fillRect( 2,2, width+4,20+4 );
+				  context[uid].fillStyle = "rgba(0,0,0,1)"; // text color
+				  context[uid].fillText( message, 4,20 );
+				    
+					// canvas contents will be used for a texture
+					texture[uid] = new THREE.Texture(canvas[uid]) 
+					texture[uid].needsUpdate = true;
+					
+					////////////////////////////////////////
+					
+					spriteMaterial = new THREE.SpriteMaterial( { map: texture[uid], useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
+					sprite[uid] = new THREE.Sprite( spriteMaterial );
+					sprite[uid].scale.set(1,1,1);
+					sprite[uid].position.set( <%= @pos[m['uid']][:x] %>, <%= @pos[m['uid']][:y] %>, <%= @pos[m['uid']][:z] %> );
+					scene.add( sprite[uid] );	
+				
+					//////////////////////////////////////////
+			    <% end %>
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+			}
+
+			//
+
+			function onDocumentMouseMove(event) {
+
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length > 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+				update();
+
+			}
+			
+			function update(){
+				
+				controls.update();
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script><div><canvas width="1330" height="802"></canvas></div>
+
+	</body>
+</html>

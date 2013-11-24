@@ -52,8 +52,17 @@
 		</div>
     </div> 
 
-     
-    </div><!-- /container -->
-
+	<script>
+		function refresh_fb(){
+	    <% if @error %> 
+	      FB.login(function(response) {
+	        if (response.authResponse) {
+	          console.log(response);
+	          window.location = '/auth/facebook/callback';
+	        }
+	      },{scope: 'user_friends,user_events,friends_events'});
+	    <% end %>
+	    }
+    </script>
 </body>
 </html>

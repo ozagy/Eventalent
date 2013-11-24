@@ -11,18 +11,19 @@ class User < ActiveRecord::Base
   end
   
   def refresh_access_token
+    logger.info 'refresh'
     begin
       fb = YAML.load_file('config/facebook.yml')
       @oauth = Koala::Facebook::OAuth.new(fb['app_id'], fb['app_secret'])
       info = @oauth.exchange_access_token_info(self.oauth_token)
-      logger.info info
       if info['access_token']
         self.oauth_token = info['access_token']
         self.oauth_expires_at = Time.at(Time.now + info['expires'].to_i)
         self.save!
       end
+      redirect_to '/'
     rescue Exception => e  
-      logger.info e.message
+      logger.info 'info:'+e.message
     end
   end
   
