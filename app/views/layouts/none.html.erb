@@ -6,6 +6,12 @@
 		<title>Eventalent - Event</title>
 		<%= javascript_include_tag "application" %>
   		<%= javascript_include_tag "facebook" %>
+  		<%= javascript_include_tag "Three.js" %>
+  		<%= javascript_include_tag "Detector.js" %>
+		<%= javascript_include_tag "RequestAnimationFrame.js" %>
+		<%= javascript_include_tag "Stats.js" %>
+		<%= javascript_include_tag "OrbitControls.js" %>
+		
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -26,16 +32,14 @@
 		    <% if @error %> 
 		      FB.login(function(response) {
 		        if (response.authResponse) {
-		          console.log(response);
 		          window.location = '/auth/facebook/callback';
 		        }
 		      },{scope: 'user_friends,user_events,friends_events'});
 		    <% end %>
 	    }
     	</script>
-		<%= javascript_include_tag "Three.js" %>
-		<%= javascript_include_tag "OrbitControls.js" %>
-		<%= javascript_include_tag "RequestAnimationFrame.js" %>
+		
+		
 
 		<script>
 
@@ -51,7 +55,9 @@
 			AMOUNTX = 10,
 			AMOUNTY = 10,
 
-			camera, scene, renderer, controls;
+			camera, scene, renderer, controls, stats;
+			var canvas1, texture1, sprite1, context1;
+			var projector, INTERSECTED;
 
 			init();
 			animate();
@@ -69,11 +75,24 @@
 
 				scene = new THREE.Scene();
 
-				renderer = new THREE.CanvasRenderer();
+				if ( Detector.webgl )
+					renderer = new THREE.WebGLRenderer( {antialias:true} );
+				else
+					renderer = new THREE.CanvasRenderer(); 
 				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-				container.appendChild(renderer.domElement);
 
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.bottom = '0px';
+				stats.domElement.style.zIndex = 100;
+				
+				container.appendChild(renderer.domElement);
+				
+				// LIGHT
+				var light = new THREE.PointLight(0xffffff);
+				light.position.set(0,500,0);
+				scene.add(light);
 				// // particles
 // 
 				// var PI2 = Math.PI * 2;
@@ -118,7 +137,7 @@
 					vector2 = new THREE.Vector3( <%= @pos[c[:uid2]][:x]%>, <%= @pos[c[:uid2]][:y]%>, <%= @pos[c[:uid2]][:z]%> );
 					geometry.vertices.push( new THREE.Vertex( vector2 ) );
 
-					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff, opacity: Math.random()*0.1+0.15 } ) );
+					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff,transparent: true, opacity: Math.random()*0.1+0.2 } ) );
 					scene.add( line );
 				<% end %>
 				// sphere
@@ -131,10 +150,11 @@
 				sprite = {};
 				
 				<% @members.each do |m| %>
-				  sphere = new THREE.Mesh(new THREE.SphereGeometry(8, 5, 5), new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.5 }));
+				  sphere = new THREE.Mesh(new THREE.SphereGeometry(8, 5, 5), new THREE.MeshBasicMaterial({ color: 0xffffff,side: THREE.BackSide,transparent: true, opacity: 0.5 }));
 			      sphere.position.x = <%= @pos[m['uid']][:x] %>
 			      sphere.position.y = <%= @pos[m['uid']][:y] %>
 			      sphere.position.z = <%= @pos[m['uid']][:z] %>
+			      sphere.name = '<%= m['name'] %>';
 			      scene.add(sphere);
 			      
 			      var uid =<%= m['uid'] %>;
@@ -146,12 +166,8 @@
 				  var message = '<%= m['name'] %>';
 				  var metrics = context[uid].measureText(message);
 				  var width = metrics.width;
-				  context[uid].fillStyle = "rgba(0,0,0,0.95)"; // black border
-				  context[uid].fillRect( 0,0, width+8,20+8);
-				  context[uid].fillStyle = "rgba(255,255,255,0.95)"; // white filler
-				  context[uid].fillRect( 2,2, width+4,20+4 );
-				  context[uid].fillStyle = "rgba(0,0,0,1)"; // text color
-				  context[uid].fillText( message, 4,20 );
+				  context[uid].fillStyle = "rgba(255,255,255,0.65)"; // text color
+				  context[uid].fillText( message, 0,20 );
 				    
 					// canvas contents will be used for a texture
 					texture[uid] = new THREE.Texture(canvas[uid]) 
@@ -161,12 +177,41 @@
 					
 					spriteMaterial = new THREE.SpriteMaterial( { map: texture[uid], useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
 					sprite[uid] = new THREE.Sprite( spriteMaterial );
-					sprite[uid].scale.set(1,1,1);
-					sprite[uid].position.set( <%= @pos[m['uid']][:x] %>, <%= @pos[m['uid']][:y] %>, <%= @pos[m['uid']][:z] %> );
+					sprite[uid].scale.set(200,100,1);
+					pos_2d = toScreenXY(sphere.position, camera);
+					sprite[uid].position.set( pos_2d.x, pos_2d.y, 0 );
+					sprite[uid].sphere = sphere;
 					scene.add( sprite[uid] );	
 				
 					//////////////////////////////////////////
 			    <% end %>
+			    
+			    projector = new THREE.Projector();
+			    /////// draw text on canvas /////////
+
+				// create a canvas element
+				canvas1 = document.createElement('canvas');
+				context1 = canvas1.getContext('2d');
+				context1.font = "Bold 20px Arial";
+				context1.fillStyle = "rgba(255,255,255,0.95)";
+			    context1.fillText('Hello, world!', 0, 20);
+			    
+				// canvas contents will be used for a texture
+				texture1 = new THREE.Texture(canvas1) 
+				texture1.needsUpdate = true;
+				
+				////////////////////////////////////////
+				
+				var spriteMaterial = new THREE.SpriteMaterial( { map: texture1, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
+				
+				sprite1 = new THREE.Sprite( spriteMaterial );
+				sprite1.scale.set(200,100,1.0);
+				sprite1.position.set( 50, 50, 0 );
+				scene.add( sprite1 );	
+			
+				//////////////////////////////////////////
+				
+				
 
 				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
@@ -176,6 +221,8 @@
 			//
 
 			function onDocumentMouseMove(event) {
+				
+				sprite1.position.set( event.clientX, event.clientY - 20, 0 );
 
 				mouseX = event.clientX - windowHalfX;
 				mouseY = event.clientY - windowHalfY;
@@ -218,8 +265,83 @@
 			}
 			
 			function update(){
+
+				for ( var key in sprite ){
+					sphere_p = sprite[key].sphere.position;
+					var pos_2d = toScreenXY( sphere_p, camera );
+					sprite[key].position.set( pos_2d.x + 10, pos_2d.y - 25, 0 );
+				}
+				// create a Ray with origin at the mouse position
+				var vector = new THREE.Vector3( mouseX, mouseY, 1 );
+				projector.unprojectVector( vector, camera );
+				var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+			
+				// create an array containing all objects in the scene with which the ray intersects
+				var intersects = ray.intersectObjects( scene.children );
+			
+				// INTERSECTED = the object in the scene currently closest to the camera 
+				//		and intersected by the Ray projected from the mouse position 	
 				
+				// if there is one (or more) intersections
+				if ( intersects.length > 0 )
+				{
+					// if the closest object intersected is not the currently stored intersection object
+					if ( intersects[ 0 ].object != INTERSECTED ) 
+					{
+					    // restore previous intersection object (if it exists) to its original color
+						if ( INTERSECTED ) 
+							INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+						// store reference to closest object as current intersection object
+						INTERSECTED = intersects[ 0 ].object;
+						// store color of closest object (for later restoration)
+						INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+						// set a new color for closest object
+						INTERSECTED.material.color.setHex( 0xffff00 );
+						
+						// update text, if it has a "name" field.
+						if ( intersects[ 0 ].object.name )
+						{
+						    context1.clearRect(0,0,640,480);
+							var message = intersects[ 0 ].object.name;
+							var metrics = context1.measureText(message);
+							var width = metrics.width;
+							context1.fillStyle = "rgba(0,0,0,0.95)"; // black border
+							context1.fillRect( 0,0, width+8,20+8);
+							context1.fillStyle = "rgba(255,255,255,0.95)"; // white filler
+							context1.fillRect( 2,2, width+4,20+4 );
+							context1.fillStyle = "rgba(255,255,255,1)"; // text color
+							context1.fillText( message, 4,20 );
+							texture1.needsUpdate = true;
+						}
+						else
+						{
+							var message = 'what the fuck?!';
+							var metrics = context1.measureText(message);
+							var width = metrics.width;
+							context1.fillStyle = "rgba(0,0,0,0.95)"; // black border
+							context1.fillRect( 0,0, width+8,20+8);
+							context1.fillStyle = "rgba(255,255,255,0.95)"; // white filler
+							context1.fillRect( 2,2, width+4,20+4 );
+							context1.fillStyle = "rgba(255,255,255,1)"; // text color
+							context1.fillText( message, 4,20 );
+							texture1.needsUpdate = true;
+						}
+					}
+				} 
+				else // there are no intersections
+				{
+					// restore previous intersection object (if it exists) to its original color
+					if ( INTERSECTED ) 
+						INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+					// remove previous intersection object reference
+					//     by setting current intersection object to "nothing"
+					INTERSECTED = null;
+					context1.clearRect(0,0,300,300);
+					texture1.needsUpdate = true;
+				}
+
 				controls.update();
+				stats.update();
 			}
 
 			function render() {
@@ -227,8 +349,21 @@
 				renderer.render( scene, camera );
 
 			}
+			
+			function toScreenXY( position, camera ) {
+	            var pos = position.clone();
+	            projScreenMat = new THREE.Matrix4();
+	            projScreenMat.multiply( camera.projectionMatrix, camera.matrixWorldInverse );
+	            projScreenMat.multiplyVector3( pos );
+	            
+	            //var div = document.getElementById('my_canvas');
+	
+	            return { x: ( pos.x + 1 ) *1330/2,
+	                 y: ( - pos.y + 1) *802/2 };
 
-		</script><div><canvas width="1330" height="802"></canvas></div>
+        	}
+
+		</script><div><canvas id='my_canvas' width="1330" height="802"></canvas></div>
 
 	</body>
 </html>
