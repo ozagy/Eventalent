@@ -52,8 +52,8 @@ class PagesController < ApplicationController
     begin
       res = @api.fql_multiquery query
     rescue Koala::Facebook::AuthenticationError => e
+      @error = 'Oops! An error occurred when connecting to Facebook. Try sign out and in again!'
       user.refresh_access_token
-      redirect_to event_path, :id => params[:id]
     rescue Exception => e
       logger.info e.message
       @error = 'Oops! An error occurred when connecting to Facebook. Try sign out and in again!'
