@@ -46,8 +46,12 @@ class PagesController < ApplicationController
     user = User.find(session[:user_id])
     @api = Koala::Facebook::API.new(user.oauth_token)
     query = {
-              "members"=>"select uid, name from user where uid in (select uid from event_member where eid = " + params[:id] + " and rsvp_status = 'attending')",
-              "links"=>"select uid1, uid2 from friend where uid1 in (SELECT uid from #members) and uid2 in (SELECT uid from #members)"
+              "members"=>"select uid, name, sex, username from user where uid in (select uid from event_member where eid = " + params[:id] + " and rsvp_status = 'attending')",
+              "thumbnails"=>"SELECT id, url FROM square_profile_pic WHERE id in (SELECT uid from #members) AND size = 50",
+              "links"=>"select uid1, uid2 from friend where uid1 in (SELECT uid from #members) and uid2 in (SELECT uid from #members)",
+              "event"=>"select name, description, creator, start_time, end_time, location from event where eid = "+ params[:id],
+              "creator"=>"SELECT uid, name FROM user WHERE uid IN (SELECT creator FROM #event)",
+              "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()"
             }
     begin
       res = @api.fql_multiquery query
@@ -58,29 +62,35 @@ class PagesController < ApplicationController
       logger.info e.message
       @error = 'Oops! An error occurred when connecting to Facebook. Try sign out and in again!'
     end
-    
-    if res.nil?
-      return false
+    if res
+      @members = res['members']
+      thumbnails = res['thumbnails']
+      @event = res['event'][0]
+      @creator = res['creator'][0]
+      friends = res['friends']
+      @friends = friends.collect{|f| f['uid2'].to_i }
+      logger.info @friends
+      ids = @members.collect{|m| m['uid']}
+      @hash = Hash[ids.map.with_index.to_a]
+      links = res['links']
+      @connections = []
+      links.each do |l|
+        @connections.push( {uid1:l['uid1'].to_i, uid2:l['uid2'].to_i} )
+      end
+      graph = Graph.new
+      ids.each do |m| 
+        graph.push m 
+      end
+      @thumbnails = {}
+      thumbnails.each do |t|
+        @thumbnails[t['id']] = t['url']
+      end
+      @connections.each do |c|
+        graph.connect_mutually( c[:uid1], c[:uid2], 1 )
+      end
+      @pos = forcedirected(graph, 0.1, 80000, 500, 1000)
+      
     end
-    @members = res['members']
-    ids = @members.collect{|m| m['uid']}
-    @hash = Hash[ids.map.with_index.to_a]
-    links = res['links']
-    @connections = []
-    links.each do |l|
-      @connections.push( {uid1:l['uid1'].to_i, uid2:l['uid2'].to_i} )
-    end
-    logger.info @connections
-    graph = Graph.new
-    ids.each do |m| 
-      graph.push m 
-    end
-    @connections.each do |c|
-      graph.connect_mutually( c[:uid1], c[:uid2], 1 )
-    end
-    @pos = forcedirected(graph, 0.1, 50000, 800, 1000)
-    
-    
     render layout: "none"
   end
   

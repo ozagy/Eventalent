@@ -45,6 +45,14 @@
     
 <%= yield %>
 
+	<div class='loading'>
+		<div class='rotate-div'>
+			<%= image_tag "rotate.png", :class => 'rotate' %>
+			<p>
+				LOADING...
+			</p>
+		</div>
+	</div>
     <div class="footer">
     	<%= image_tag "footerlogo.png", :class => 'logo-footer' %>
 		<div class='credit'>

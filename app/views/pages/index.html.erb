@@ -85,6 +85,7 @@
 (function() {
   $(function() {
     $('.events_row').click(function(){
+      $('.loading').fadeIn();
       var path = $(this).attr('event');
       window.location = path;
     });

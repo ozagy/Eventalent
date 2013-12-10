@@ -1,2 +1,428 @@
-<h1>Pages#event</h1>
-<p>Find me in app/views/pages/event.html.erb</p>
+<% content_for :css do %>
+<style>
+body {
+	background-color: #000000;
+	margin: 0px;
+	overflow: hidden;
+}
+
+a {
+	color:#0078ff;
+}
+.event_title{
+	color:#ccc;
+	position:fixed;
+	left: 10px;
+	top:5px;
+	font-family: "gotham_boldregular";
+	font-size:13px;
+	line-height:150%;
+}
+.title{
+	height:30px;
+	margin-right: 20px
+}
+.name_tag{
+	position:absolute;
+	left: 0px;
+	top: 0px;
+	padding: 8px 5px 5px 5px;
+	width: 180px;
+	height: 47px;
+	background-color:rgba(255,255,255,1);
+	border-radius: 2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	font-family: "gotham_boldregular";
+	display:none;
+}
+.thumbnail{
+	width:50px;
+	height:50px;
+	margin-top:-3px;
+	float:left;
+	border-radius: 2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+	margin-right:5px
+}
+.name{
+	color:#3B5998 ;
+	font-size:14px;
+}
+.sex{
+	color:#999;
+	font-size:11px;
+}
+.friend{
+	color:#777;
+	font-size:12px;
+}
+
+</style>
+<% end %>
+
+<% if @error.nil? %>
+		<script>
+
+			var SCREEN_WIDTH = window.innerWidth,
+			SCREEN_HEIGHT = window.innerHeight,
+
+			mouseX = 0, mouseY = 0,
+
+			windowHalfX = window.innerWidth / 2,
+			windowHalfY = window.innerHeight / 2,
+
+			SEPARATION = 200,
+			AMOUNTX = 10,
+			AMOUNTY = 10,
+
+			camera, scene, renderer, controls, stats;
+			//var canvas1, texture1, sprite1, context1;
+			var projector, INTERSECTED;
+
+			init();
+			animate();
+
+			function init() {
+
+				var container, separation = 100, amountX = 50, amountY = 50,
+				particles, particle;
+
+				container = document.createElement('div');
+				document.body.appendChild(container);
+
+				camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 10000 );
+				camera.position.z = 1000;
+
+				scene = new THREE.Scene();
+
+				if ( Detector.webgl )
+					renderer = new THREE.WebGLRenderer( {antialias:true} );
+				else
+					renderer = new THREE.CanvasRenderer(); 
+				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.bottom = '0px';
+				stats.domElement.style.zIndex = 100;
+				
+				container.appendChild(renderer.domElement);
+				
+				// LIGHT
+				var light = new THREE.PointLight(0xffffff);
+				light.position.set(0,500,0);
+				scene.add(light);
+				// particles
+
+				// var PI2 = Math.PI * 2;
+				// var material = new THREE.ParticleCanvasMaterial( {
+// 
+					// color: 0xffffff,
+					// program: function ( context ) {
+// 
+						// context.beginPath();
+						// context.arc( 0, 0, 1, 0, PI2, true );
+						// context.closePath();
+						// context.fill();
+// 
+					// }
+// 
+				// } );
+// 				
+				// var geometry = new THREE.Geometry();
+// 
+				// for ( i = 0; i < 1000; i ++ ) {
+// 
+					// var vertex = new THREE.Vector3();
+					// vertex.x = Math.random() * 2000 - 1000;
+					// vertex.y = Math.random() * 2000 - 1000;
+					// vertex.z = Math.random() * 2000 - 1000;
+// 
+					// geometry.vertices.push( vertex );
+// 
+				// }
+				// particle = new THREE.ParticleSystem( geometry, material );
+				// scene.add( particle );
+
+				// lines
+				var vector = {};
+				var vector2 = {};
+				var geometry = {}
+				var line = {};
+				<% @connections.each do |c| %>
+					geometry = new THREE.Geometry();
+
+					vector = new THREE.Vector3( <%= @pos[c[:uid1]][:x]%>, <%= @pos[c[:uid1]][:y]%>, <%= @pos[c[:uid1]][:z]%> );
+					geometry.vertices.push( vector );
+
+					vector2 = new THREE.Vector3( <%= @pos[c[:uid2]][:x]%>, <%= @pos[c[:uid2]][:y]%>, <%= @pos[c[:uid2]][:z]%> );
+					geometry.vertices.push( vector2 );
+
+					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff,transparent: true, opacity: Math.random()*0.1+0.1 } ) );
+					scene.add( line );
+				<% end %>
+				// sphere
+				var sphere = {}
+				spheres = [];
+				var spriteMaterial = {}
+				var uid = 0;
+				canvas = {};
+				context = {};
+				texture = {};
+				sprite = {};
+				
+				<% @members.each do |m| %>
+				  sphere = new THREE.Mesh(new THREE.SphereGeometry(6, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff,side: THREE.BackSide,transparent: true, opacity: 0.6 }));
+			      sphere.position.x = <%= @pos[m['uid']][:x] %>
+			      sphere.position.y = <%= @pos[m['uid']][:y] %>
+			      sphere.position.z = <%= @pos[m['uid']][:z] %>
+			      sphere.name = '<%= m['name'] %>';
+			      sphere.sex = '<%= m['sex'] %>';
+			      sphere.thumbnail = '<%= @thumbnails[m['uid']] %>';
+			      sphere.me = <% if m['uid'].to_i == @current_user.uid.to_i %> true <% else %> false <% end %>;
+			      sphere.friend = <% if @friends.include? m['uid'].to_i %> true <% else %> false <% end %>;
+			      	
+			      spheres.push(sphere);
+			      scene.add(sphere);
+			      
+			      var uid =<%= m['uid'] %>;
+					// create a canvas element
+			      canvas[uid] = document.createElement('canvas');
+				  context[uid] = canvas[uid].getContext('2d');
+				  context[uid].font = "Bold 20px Arial";
+				  
+				  var message = '<%= m['name'] %>';
+				  var metrics = context[uid].measureText(message);
+				  var width = metrics.width;
+				  context[uid].fillStyle = "rgba(255,255,255,0.65)"; // text color
+				  context[uid].fillText( message, 0,20 );
+				    
+					// canvas contents will be used for a texture
+					texture[uid] = new THREE.Texture(canvas[uid]) 
+					texture[uid].needsUpdate = true;
+					
+					////////////////////////////////////////
+					
+					spriteMaterial = new THREE.SpriteMaterial( { map: texture[uid], useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
+					sprite[uid] = new THREE.Sprite( spriteMaterial );
+					sprite[uid].scale.set(200,100,1);
+					pos_2d = toScreenXY(sphere.position, camera);
+					sprite[uid].position.set( pos_2d.x, pos_2d.y, 0 );
+					sprite[uid].sphere = sphere;
+					scene.add( sprite[uid] );	
+				
+					//////////////////////////////////////////
+			    <% end %>
+			    
+			    projector = new THREE.Projector();
+			    /////// draw text on canvas /////////
+
+				// create a canvas element
+				// canvas1 = document.createElement('canvas');
+				// context1 = canvas1.getContext('2d');
+				// context1.font = "Bold 20px Arial";
+				// context1.fillStyle = "rgba(255,255,255,0.95)";
+			    // context1.fillText('Hello, world!', 0, 20);
+// 			    
+				// // canvas contents will be used for a texture
+				// texture1 = new THREE.Texture(canvas1) 
+				// texture1.needsUpdate = true;
+// 				
+				// ////////////////////////////////////////
+// 				
+				// var spriteMaterial = new THREE.SpriteMaterial( { map: texture1, useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
+// 				
+				// sprite1 = new THREE.Sprite( spriteMaterial );
+				// sprite1.scale.set(200,100,1.0);
+				// sprite1.position.set( 50, 50, 0 );
+				// scene.add( sprite1 );	
+// 			
+				// //////////////////////////////////////////
+				
+				
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+				document.addEventListener("mousedown", onDocumentmouseClick, false);
+			}
+
+			//
+
+			function onDocumentMouseMove(event) {
+				
+				//sprite1.position.set( event.clientX + 10 , event.clientY - 20, 0 );
+
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+			}
+
+			function onDocumentTouchStart( event ) {
+
+				if ( event.touches.length > 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+
+			function onDocumentTouchMove( event ) {
+
+				if ( event.touches.length == 1 ) {
+
+					event.preventDefault();
+
+					mouseX = event.touches[ 0 ].pageX - windowHalfX;
+					mouseY = event.touches[ 0 ].pageY - windowHalfY;
+
+				}
+
+			}
+			function onDocumentmouseClick( event ){
+
+				var vector = new THREE.Vector3( (event.clientX/SCREEN_WIDTH) * 2 - 1, -(event.clientY/SCREEN_HEIGHT) * 2 + 1, 1 );
+				projector.unprojectVector( vector, camera );
+				var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+			    
+				// create an array containing all objects in the scene with which the ray intersects
+				var intersects = ray.intersectObjects( spheres );
+				console.log(intersects[0].object);
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				render();
+				update();
+
+			}
+			
+			function update(){
+
+				for ( var key in sprite ){
+					sphere_p = sprite[key].sphere.position;
+					var pos_2d = toScreenXY( sphere_p, camera );
+					sprite[key].position.set( pos_2d.x + 10, pos_2d.y - 10, 0 );
+				}
+				// create a Ray with origin at the mouse position
+				var vector = new THREE.Vector3( ((mouseX+windowHalfX)/SCREEN_WIDTH) * 2 - 1, -((mouseY+windowHalfY)/SCREEN_HEIGHT) * 2 + 1, 1 );
+				projector.unprojectVector( vector, camera );
+				var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+			    
+				// create an array containing all objects in the scene with which the ray intersects
+				var intersects = ray.intersectObjects( spheres );
+			
+				// INTERSECTED = the object in the scene currently closest to the camera 
+				//		and intersected by the Ray projected from the mouse position 	
+				
+				// if there is one (or more) intersections
+				if ( intersects.length > 0 )
+				{
+					// if the closest object intersected is not the currently stored intersection object
+					if ( intersects[ 0 ].object != INTERSECTED ) 
+					{
+					    // restore previous intersection object (if it exists) to its original color
+						if ( INTERSECTED ) 
+							INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+						// store reference to closest object as current intersection object
+						INTERSECTED = intersects[ 0 ].object;
+						// store color of closest object (for later restoration)
+						INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+						// set a new color for closest object
+						INTERSECTED.material.color.setHex( 0x0090ff );
+						INTERSECTED.scale.set( 2, 2, 2 );
+						// update text, if it has a "name" field.
+						if ( intersects[ 0 ].object.name )
+						{
+						    var obj = intersects[ 0 ].object;
+							showNameTag(obj, mouseX, mouseY);
+						}
+						
+					}
+				} 
+				else // there are no intersections
+				{
+					// restore previous intersection object (if it exists) to its original color
+					if ( INTERSECTED ) {
+						INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
+						INTERSECTED.scale.set( 0.5, 0.5, 0.5 );
+					}
+					// remove previous intersection object reference
+					//     by setting current intersection object to "nothing"
+					INTERSECTED = null;
+					hideNameTag();
+				}
+
+				controls.update();
+				stats.update();
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+			
+			function toScreenXY( position, camera ) {
+	            var pos = position.clone();
+	            projScreenMat = new THREE.Matrix4();
+	            projScreenMat.multiplyMatrices( camera.projectionMatrix, camera.matrixWorldInverse );
+	            pos.applyProjection( projScreenMat );
+	            
+	            //var div = document.getElementById('my_canvas');
+	
+	            return { x: ( pos.x + 1 ) * SCREEN_WIDTH/2,
+	                 y: ( - pos.y + 1) * SCREEN_HEIGHT/2 };
+
+        	}
+        	
+        	function showNameTag( obj, x, y ){
+        		$('.name').html(obj.name);
+        		$('.sex').html(obj.sex);
+        		$('.thumbnail').attr('src',obj.thumbnail);
+        		if (obj.me)
+        			$('.friend').html('Here I am!');
+        		else if (obj.friend)
+        			$('.friend').html('Is friend');
+        		else
+        			$('.friend').html('Not friend');
+        		$('.name_tag').css('left', x + windowHalfX - 30 + 'px'); 
+        		$('.name_tag').css('top', y + windowHalfY - 70 + 'px');  	 		
+        		$('.name_tag').fadeIn();  		
+        	}
+        	function hideNameTag(){
+        		$('.name_tag').fadeOut();       
+        	}
+			
+			$(function(){
+
+			});
+			
+		</script>
+		<div class='event_title'>
+			<%= image_tag "footerlogo.png", :class => 'title' %> <br /><br />
+			NAME: <%= @event['name'] %><br />
+			CREATOR: <%= @creator['name'] %><br />
+			START: <%= @event['start_time'] %><br />
+			<% if @event['end_time'] %> END: <%= @event['end_time'] %> <br /> <% end %>
+			LOCATION: <%= @event['location'] %>
+		</div>
+		<div class='name_tag'>
+			<%= image_tag "logo.png", :class => 'thumbnail' %>
+			<span class='name'>Name</span><br />
+			<span class='sex'>Sex</span><br />
+			<span class='friend'>Not friend</span>
+		</div>
+		<div><canvas id='my_canvas' width="1330" height="802"></canvas></div>
+		
+<% end %>
+
