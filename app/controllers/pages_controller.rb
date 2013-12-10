@@ -34,8 +34,8 @@ class PagesController < ApplicationController
         e['description'] = detail['description']
         e['creator'] = detail['creator']
         e['creator_name'] = creators.select{|c| c['uid'] == detail['creator']}.first['name']
-        e['start_time'] = detail['start_time']
-        e['end_time'] = detail['end_time']
+        e['start_time'] = Time.parse(detail['start_time']).strftime "%Y-%m-%d %H:%M:%S %Z"
+        e['end_time'] = Time.parse(detail['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" if detail['end_time']
         f_id = friends.collect{|f| f['uid2']}
         e['creator_friend'] = f_id.include? detail['creator']
       end

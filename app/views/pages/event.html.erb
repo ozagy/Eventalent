@@ -412,8 +412,8 @@ a {
 			<%= image_tag "footerlogo.png", :class => 'title' %> <br /><br />
 			NAME: <%= @event['name'] %><br />
 			CREATOR: <%= @creator['name'] %><br />
-			START: <%= @event['start_time'] %><br />
-			<% if @event['end_time'] %> END: <%= @event['end_time'] %> <br /> <% end %>
+			START: <%= Time.parse(@event['start_time']).strftime "%Y-%m-%d %H:%M:%S %Z" %><br />
+			<% if @event['end_time'] %> END: <%= Time.parse(@event['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" %> <br /> <% end %>
 			LOCATION: <%= @event['location'] %>
 		</div>
 		<div class='name_tag'>
