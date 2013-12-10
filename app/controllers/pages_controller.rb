@@ -92,7 +92,7 @@ class PagesController < ApplicationController
       pos[vertex] = { x: rand.rand(size)-size/2, y: rand.rand(size)-size/2, z: rand.rand(size)-size/2}
       force[vertex] = { x: 0, y: 0, z: 0}
     end
-    500.times do |x|
+    800.times do |x|
       g.each do |vertex|
         force[vertex] = { x: 0, y: 0, z: 0}
         g.neighbors(vertex).each do |neighbor|
