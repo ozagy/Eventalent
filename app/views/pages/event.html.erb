@@ -701,7 +701,7 @@ a {
 					});
 					var userList = new List(k, options, values);
 					$('.group-title').mouseenter(function(){
-						var group = $(this).attr('group');
+						var group = $(this).attr('group').replace('_',' ');
 						$.each(groups, function(i,g){
 							if (i != group){
 								$.each(g, function(i, v){
