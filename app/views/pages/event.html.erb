@@ -50,7 +50,7 @@ a {
 	color:#3B5998 ;
 	font-size:14px;
 }
-.sex{
+.sex, .gender{
 	color:#999;
 	font-size:11px;
 }
@@ -58,7 +58,117 @@ a {
 	color:#777;
 	font-size:12px;
 }
-
+.icon-outer-div{
+	margin-top: 100px;
+	position:fixed;
+	left: 10px;
+	bottom:5px;
+}
+.icon-div{
+	height:50px;
+	width:50px;
+	margin: 0 0 20px 10px;
+}
+.icon-div:hover{
+	cursor:pointer;
+}
+.icon-div:not(.active):hover .icon{
+	opacity: 0.4;
+}
+.icon{
+	width:50px;
+	opacity: 0.7;
+}
+.active .icon{
+	opacity: 1;
+}
+.detail-div{
+	background-color: rgba(50,50,50,0.6);
+	position:absolute;
+	right:0px;
+	top:0px;
+	width:300px;
+	height:100%;
+}
+.detail-tab{
+	width:30px;
+	opacity:0.6;
+	position:absolute;
+	left:-30px;
+	top:0px;
+}
+.detail-tab:hover{
+	cursor:pointer;
+}
+.tableview{
+	width:100%;
+	height:100%;
+	overflow-x:hidden;
+	overflow-y:scroll;
+	position:relative;
+	color:#fff;
+}
+.tablerows{
+	width:100%;
+	position:relative;
+	float:left;
+	margin-top:3px;
+}
+.group-div{
+	padding:0px;
+}
+.list{
+	margin:0;
+    padding:0px 0 0;
+}
+.list > li {
+  display:block;
+  background-color:rgba(100,100,100,0.5);
+  padding:10px;
+  margin:2px 0 2px 0;
+  font-family: "gotham_boldregular";
+  position:relative;
+  min-height: 50px;
+}
+.list > li:hover{
+	cursor:pointer;
+	background-color: rgba(200,200,200,0.5);
+}
+.thumb{
+	display:inline;
+	float:left;
+	height:50px;
+	width:50px;
+	margin-right:6px
+}
+.thumb img{
+	border-radius: 2px;
+	-moz-border-radius:2px;
+	-webkit-border-radius:2px;
+}
+.listname{
+	color:#eee;
+	font-size:14px;
+}
+.color-bar{
+	width:10px;
+	position:absolute;
+	right:0px;
+	top:0px;
+	height:100%;
+}
+.rank{
+	position:absolute;
+	right:13px;
+	bottom:-12px;
+	color:#ddd;
+}
+.eig{
+	position:absolute;
+	right:13px;
+	top: -10px;
+	color:#ddd;
+}
 </style>
 <% end %>
 
@@ -152,6 +262,7 @@ a {
 				var vector2 = {};
 				var geometry = {}
 				var line = {};
+				lines = [];
 				<% @connections.each do |c| %>
 					geometry = new THREE.Geometry();
 
@@ -160,13 +271,18 @@ a {
 
 					vector2 = new THREE.Vector3( <%= @pos[c[:uid2]][:x]%>, <%= @pos[c[:uid2]][:y]%>, <%= @pos[c[:uid2]][:z]%> );
 					geometry.vertices.push( vector2 );
-
-					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff,transparent: true, opacity: Math.random()*0.1+0.1 } ) );
+					var opacity = Math.random()*0.1+0.1;
+					line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xffffff,transparent: true, opacity: opacity } ) );
+					line.uid1 = <%= c[:uid1] %>;
+					line.uid2 = <%= c[:uid2] %>;
+					line.default_opacity = opacity;
 					scene.add( line );
+					lines.push( line );
 				<% end %>
 				// sphere
 				var sphere = {}
-				spheres = [];
+				spheres = {};
+				spheres_arr = [];
 				var spriteMaterial = {}
 				var uid = 0;
 				canvas = {};
@@ -184,8 +300,16 @@ a {
 			      sphere.thumbnail = '<%= @thumbnails[m['uid']] %>';
 			      sphere.me = <% if m['uid'].to_i == @current_user.uid.to_i %> true <% else %> false <% end %>;
 			      sphere.friend = <% if @friends.include? m['uid'].to_i %> true <% else %> false <% end %>;
-			      	
-			      spheres.push(sphere);
+			      sphere.eig = <%= @eig[m['uid']] %>;
+			      sphere.deg = <%= @deg[m['uid']] %>;
+			      sphere.dis = <% if @dis[m['uid']] %>
+			      					<%= @dis[m['uid']] %>
+			      				<% else %>
+			      					'Unknown'
+			      				<% end %>;
+			      sphere.uid = <%= m['uid'] %>;
+			      spheres[<%= m['uid'] %>] = sphere;
+			      spheres_arr.push(sphere);
 			      scene.add(sphere);
 			      
 			      var uid =<%= m['uid'] %>;
@@ -206,12 +330,13 @@ a {
 					
 					////////////////////////////////////////
 					
-					spriteMaterial = new THREE.SpriteMaterial( { map: texture[uid], useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft } );
+					spriteMaterial = new THREE.SpriteMaterial( { map: texture[uid], useScreenCoordinates: true, alignment: THREE.SpriteAlignment.topLeft, transparent:true } );
 					sprite[uid] = new THREE.Sprite( spriteMaterial );
 					sprite[uid].scale.set(200,100,1);
 					pos_2d = toScreenXY(sphere.position, camera);
 					sprite[uid].position.set( pos_2d.x, pos_2d.y, 0 );
 					sprite[uid].sphere = sphere;
+					sphere.sprite = sprite[uid];
 					scene.add( sprite[uid] );	
 				
 					//////////////////////////////////////////
@@ -248,6 +373,7 @@ a {
 				document.addEventListener( 'touchstart', onDocumentTouchStart, false );
 				document.addEventListener( 'touchmove', onDocumentTouchMove, false );
 				document.addEventListener("mousedown", onDocumentmouseClick, false);
+
 			}
 
 			//
@@ -319,7 +445,7 @@ a {
 				var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
 			    
 				// create an array containing all objects in the scene with which the ray intersects
-				var intersects = ray.intersectObjects( spheres );
+				var intersects = ray.intersectObjects( spheres_arr );
 			
 				// INTERSECTED = the object in the scene currently closest to the camera 
 				//		and intersected by the Ray projected from the mouse position 	
@@ -344,7 +470,7 @@ a {
 						if ( intersects[ 0 ].object.name )
 						{
 						    var obj = intersects[ 0 ].object;
-							showNameTag(obj, mouseX, mouseY);
+							showNameTag(obj, 200);
 						}
 						
 					}
@@ -355,11 +481,11 @@ a {
 					if ( INTERSECTED ) {
 						INTERSECTED.material.color.setHex( INTERSECTED.currentHex );
 						INTERSECTED.scale.set( 0.5, 0.5, 0.5 );
+						hideNameTag(200);
 					}
 					// remove previous intersection object reference
 					//     by setting current intersection object to "nothing"
 					INTERSECTED = null;
-					hideNameTag();
 				}
 
 				controls.update();
@@ -385,7 +511,10 @@ a {
 
         	}
         	
-        	function showNameTag( obj, x, y ){
+        	function showNameTag( obj , speed ){
+        		var sphere_p = obj.position;
+				var pos_2d = toScreenXY( sphere_p, camera );
+        		
         		$('.name').html(obj.name);
         		$('.sex').html(obj.sex);
         		$('.thumbnail').attr('src',obj.thumbnail);
@@ -395,18 +524,274 @@ a {
         			$('.friend').html('Is friend');
         		else
         			$('.friend').html('Not friend');
-        		$('.name_tag').css('left', x + windowHalfX - 30 + 'px'); 
-        		$('.name_tag').css('top', y + windowHalfY - 70 + 'px');  	 		
-        		$('.name_tag').fadeIn();  		
+        		$('.name_tag').css('left', pos_2d.x  - 30 + 'px'); 
+        		$('.name_tag').css('top', pos_2d.y  - 70 + 'px');  	 		
+        		$('.name_tag').fadeIn(speed);  		
         	}
-        	function hideNameTag(){
-        		$('.name_tag').fadeOut();       
+        	function hideNameTag( speed ){
+        		$('.name_tag').fadeOut(speed);       
         	}
 			
 			$(function(){
-
+				$('.toggle').click(function(){
+					if ($(this).hasClass('active'))
+					{
+						$('.toggle').removeClass('active');
+						resetScene();
+					}
+					else {
+						$('.toggle').removeClass('active');
+						$(this).addClass('active');
+						switch ($(this).attr('id'))
+						{
+							case 'gender':
+								showGender();
+								break;
+							case 'distance':
+								showDistance();
+								break;
+							case 'rank':
+								showRank();
+								break;
+							case 'cluster':
+								showCluster();
+								break;
+						}
+					}
+					
+				});
+				$('.detail-tab').click(function(){
+					if ($('.detail-div').css('right') == '-300px')
+						showDetails();
+					else
+						hideDetails();
+				});
+						
+				appendList({'All':spheres});
 			});
 			
+			function showDetails()
+			{
+				$('.detail-div').css('right', '0px');
+			}
+			function hideDetails()
+			{
+				$('.detail-div').css('right', '-300px');
+			}
+			
+			function resetScene()
+			{
+				appendList({'All':spheres});
+			}
+			
+			function showGender()
+			{
+				var groups = {'Male': [], 'Female': []};
+				$.each(spheres, function(i, v){
+					if (v.sex == 'male')
+					{
+						groups['Male'].push(v);
+					}
+					else
+					{
+						groups['Female'].push(v);
+					}
+				});
+				appendList(groups);
+			}
+			
+			function showDistance()
+			{
+				var groups = {'Me':[]};
+				spheres_arr.sort(function(a, b) {
+		    		a = a.dis;
+				    b = b.dis;
+				    return a < b ? -1 : (a > b ? 1 : 0);
+				});
+				$.each(spheres_arr, function(i,v){
+					if (v.dis == 0)
+						groups['Me'].push(v);
+					else if (v.dis == 1)
+					{
+						if (!groups['Friends'])
+							groups['Friends'] = [];
+						groups['Friends'].push(v);
+					}
+					else
+					{
+						if (!groups['Distance '+v.dis])
+							groups['Distance '+v.dis] = [];
+						groups['Distance '+v.dis].push(v);
+					}	
+				});
+				appendList(groups);
+			}
+			
+			function showRank()
+			{
+				var groups = {};
+				spheres_arr.sort(function(a, b) {
+		    		a = a.eig;
+				    b = b.eig;
+				    return a > b ? -1 : (a < b ? 1 : 0);
+				});
+				var current = Infinity;
+				var rank = 0;
+				var count = 0;
+				$.each(spheres_arr, function(i, v){
+					if (v.eig < current)
+					{
+						rank = count;
+						v.rank = ++rank;
+						current = v.eig;
+					}
+					else if( current - v.eig < 0.001 )
+					{
+						v.rank = rank;
+						current = v.eig;
+					}
+					count++;
+				})
+				$.each(spheres_arr, function(i,v){
+					if (!groups['Rank '+v.rank])
+						groups['Rank '+v.rank] = [];
+					groups['Rank '+v.rank].push(v);
+				});
+				appendList(groups);
+			}
+			
+			function appendList(groups)
+			{
+				$('.tableview').html('');
+				$.each(groups, function(k,g){
+					var color = getColor(k);
+					if (k.split(' ')[0] == 'Rank' )
+						$('.tableview').append('<h3 class="group-title open" group="'+ k.replace(' ','_') +'" style="background-color:#'+ color +'; display:none">'+ k +' ('+ Object.size(g) +')</h3><div class="group-div" id="' +k+'"><ul class="list"></ul></div>');
+					else
+						$('.tableview').append('<h3 class="group-title open" group="'+ k.replace(' ','_') +'" style="background-color:#'+ color +'">'+ k +' ('+ Object.size(g) +')</h3><div class="group-div" id="' +k+'"><ul class="list"></ul></div>');
+					valueNames = ['thumb', 'listname', 'gender', 'uid' ];
+					item = '<li class="trans items"><span style="display:none" class="uid"></span><div class="color-bar" style="background-color:#'+ color +'"></div><div class="thumb"></div><span class="listname"></span></br><span class="gender"></span>';
+					item_close = '</li>';
+					if (k.split(' ')[0] == 'Rank') {
+						valueNames.push('rank');
+						valueNames.push('eig');
+						item += '<h4 class="rank"></h4><h4 class="eig"></h4>';
+					}
+					var options = {
+						valueNames: valueNames,
+						item: item+item_close
+					};
+					
+					var values = [];
+					$.each(g, function(i, v){
+						if (k == 'All' || k == 'Me')
+						{
+							v.material.color.setHex( 0xffffff );
+							v.sprite.material.color.setHex( 0xffffff );
+						}
+						else
+						{
+							v.material.color.setHex( parseInt('0x'+color,16) );
+							v.sprite.material.color.setHex( parseInt('0x'+color,16) );
+						}
+						if (k.split(' ')[0] == 'Rank')
+							values.push({ thumb: '<img src="'+v.thumbnail+'"/>', listname: v.name, gender: v.sex, uid:v.uid, rank: 'Rank: '+v.rank, eig: v.eig });
+						else
+							values.push({ thumb: '<img src="'+v.thumbnail+'"/>', listname: v.name, gender: v.sex, uid:v.uid });
+					});
+					var userList = new List(k, options, values);
+					$('.group-title').mouseenter(function(){
+						var group = $(this).attr('group');
+						$.each(groups, function(i,g){
+							if (i != group){
+								$.each(g, function(i, v){
+									v.material.opacity = 0.3;
+									v.sprite.material.opacity = 0.3;
+								});
+							}
+						});
+						$.each(lines, function(i,l){
+							if ( $.inArray(spheres[l.uid1],groups[group]) == -1 || $.inArray(spheres[l.uid2],groups[group]) == -1)
+							{
+								l.material.opacity = 0;
+							}
+						})
+					}).mouseleave(function(){
+						$.each(spheres, function(i, v){
+							v.material.opacity = 0.6;
+							v.sprite.material.opacity = 1;
+						});
+						$.each(lines, function(i,l){
+							l.material.opacity = l.default_opacity;
+						})
+					});
+			        $('.items').mouseenter(function(){
+			        	var id = $(this).find('.uid').html();
+			        	showNameTag(spheres[id], 0);
+			        	spheres[id].scale.set( 2, 2, 2 );
+			        }).mouseleave(function(){
+			        	hideNameTag(0);
+			        	var id = $(this).find('.uid').html();
+			        	spheres[id].scale.set( 0.5, 0.5, 0.5 );
+			        })
+			   	});
+			   	new jQueryCollapse($(".tableview"), {
+		          open: function() {
+		            this.slideDown(150);
+		          },
+		          close: function() {
+		            this.slideUp(150);
+		          }
+		        });
+			}
+					
+			function getColor( info )
+			{
+				var name = info.split(' ')[0];
+				var i = parseInt(info.split(' ')[1]);
+				var colors = ['ffa6a6', 'a6d0ff', 'b5ffa6', 'fff6a6', 'fca6ff', 'a6fdec', 'fdcda6', 'fdcda6', 
+						'e5fda6', 'eaeaea', 'aebb8c', 'bb8c8c', 'b98cbb', '8c8cbb', '8cbb8f', 'bbb58c'];
+				switch ( name )
+				{
+					case 'All':
+						return '919191';
+					case 'Me':
+						return 'cccccc';
+					case 'Friends':
+						return 'ffa6a6';
+					case 'Male':
+						return '91c7fe';
+					case 'Female':
+						return 'ffa8fc';
+					case 'Distance':
+						if (i < 16) 
+							return colors[i-1]; 
+						else
+							return '707070';
+					case 'Rank':
+						if (i == 1) 
+							return '7d9cff';
+						else if (i == 2)
+							return 'b9c9fe';
+						else if (i == 3)
+							return 'e0e7ff';
+						else
+							return '707070';
+					case 'Cluster':
+						if (i < 16) 
+							return colors[i-1]; 
+						else
+							return 'ffffff';
+				}
+			}
+			Object.size = function(obj) {
+			    var size = 0, key;
+			    for (key in obj) {
+			        if (obj.hasOwnProperty(key)) size++;
+			    }
+			    return size;
+			};
+
 		</script>
 		<div class='event_title'>
 			<%= image_tag "footerlogo.png", :class => 'title' %> <br /><br />
@@ -415,6 +800,35 @@ a {
 			START: <%= Time.parse(@event['start_time']).strftime "%Y-%m-%d %H:%M:%S %Z" %><br />
 			<% if @event['end_time'] %> END: <%= Time.parse(@event['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" %> <br /> <% end %>
 			LOCATION: <%= @event['location'] %>
+			
+			
+		</div>
+		<div class='icon-outer-div'>
+			<div class='icon-div toggle' id='gender'>
+				<%= image_tag "icon-gender.png", :class => 'icon trans', :title => 'Show Genders of Participants' %>
+			</div>
+			<div class='icon-div toggle' id='distance'>
+				<%= image_tag "icon-friends.png", :class => 'icon trans', :title => 'Show My Friends and Distances to Participants' %>
+			</div>
+			<div class='icon-div toggle' id='rank'>
+				<%= image_tag "icon-rank.png", :class => 'icon trans', :title => 'Show Rankings of Participants' %>
+			</div>
+			<div class='icon-div toggle' id='cluster'>
+				<%= image_tag "icon-clusters.png", :class => 'icon trans', :title => 'Show Clusters of Participants' %>
+			</div>
+			<div class='icon-div' id='help'>
+				<%= link_to (image_tag "icon-help.png", :class => 'icon trans', :title => 'Go to Read Help & Documentation'), help_path %>
+			</div>
+			<div class='icon-div' id='back'>
+				<%= link_to (image_tag "icon-back.png", :class => 'icon trans', :title => 'Back to My Events List'), root_path %>
+			</div>
+		</div>
+		<div class='detail-div trans'>
+			<%= image_tag "DETAILS.png", :class => 'detail-tab' %>
+			<div class='tableview'>
+
+			</div>
+			
 		</div>
 		<div class='name_tag'>
 			<%= image_tag "logo.png", :class => 'thumbnail' %>

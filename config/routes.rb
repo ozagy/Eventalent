@@ -5,6 +5,7 @@ Eventalent::Application.routes.draw do
   get 'signout', to: 'sessions#destroy', as: 'signout'
   post 'login' => 'pages#login'
   get "event/:id", to: 'pages#event', as: 'event'
+  get "help", to: "pages#help"
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

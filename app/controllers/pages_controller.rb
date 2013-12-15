@@ -6,7 +6,6 @@ class PagesController < ApplicationController
   def index
     user = User.find(session[:user_id])
     @api = Koala::Facebook::API.new(user.oauth_token)
-    logger.info user.oauth_token
     query = {
               "events"=>"SELECT eid, rsvp_status FROM event_member WHERE uid = me()",
               "details"=>"SELECT eid, name, description, creator, start_time, end_time FROM event WHERE eid IN (SELECT eid FROM  #events)",
@@ -41,6 +40,10 @@ class PagesController < ApplicationController
       end
     end
   end
+  
+  def help
+  
+  end
 
   def event
     user = User.find(session[:user_id])
@@ -51,7 +54,10 @@ class PagesController < ApplicationController
               "links"=>"select uid1, uid2 from friend where uid1 in (SELECT uid from #members) and uid2 in (SELECT uid from #members)",
               "event"=>"select name, description, creator, start_time, end_time, location from event where eid = "+ params[:id],
               "creator"=>"SELECT uid, name FROM user WHERE uid IN (SELECT creator FROM #event)",
-              "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()"
+              "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()",
+              "me" => "SELECT uid, name, sex, username from user where uid = "+ @current_user.uid, 
+              "links_me" => "select uid1, uid2 from friend where uid1 = "+ @current_user.uid + " and uid2 in (SELECT uid from #members)",
+              "thumbnail_me"=>"SELECT id, url FROM square_profile_pic WHERE id = "+ @current_user.uid + " AND size = 50"
             }
     begin
       res = @api.fql_multiquery query
@@ -69,10 +75,15 @@ class PagesController < ApplicationController
       @creator = res['creator'][0]
       friends = res['friends']
       @friends = friends.collect{|f| f['uid2'].to_i }
-      logger.info @friends
       ids = @members.collect{|m| m['uid']}
-      @hash = Hash[ids.map.with_index.to_a]
       links = res['links']
+      if ids.exclude? res['me'][0]['uid']
+        @members.push res['me'][0]
+        ids.push res['me'][0]['uid']
+        links = [links, res['links_me']].flatten
+        thumbnails.push res['thumbnail_me'][0]
+      end
+      @hash = Hash[ids.map.with_index.to_a]
       @connections = []
       links.each do |l|
         @connections.push( {uid1:l['uid1'].to_i, uid2:l['uid2'].to_i} )
@@ -89,7 +100,9 @@ class PagesController < ApplicationController
         graph.connect_mutually( c[:uid1], c[:uid2], 1 )
       end
       @pos = forcedirected(graph, 0.1, 80000, 500, 1000)
-      
+      @eig = eigenvector(graph, @connections)
+      @deg = degree(graph)
+      @dis = graph.dijkstra(res['me'][0]['uid'])
     end
     render layout: "none"
   end
@@ -138,4 +151,28 @@ class PagesController < ApplicationController
     return pos
   end
   
+  def degree(g)
+    deg = {}
+    g.each do |vertex|
+      deg[vertex] = g.neighbors(vertex).count
+    end
+    return deg
+  end
+  
+  def eigenvector(g, connections)
+    hash = Hash[g.map {|v| [v,g.index(v)]}]
+    adj_arr = Array.new(g.size){ Array.new(g.size){ 0 } }
+    connections.each do |c|
+      adj_arr[hash[c[:uid1]]][hash[c[:uid2]]] = 1
+      adj_arr[hash[c[:uid2]]][hash[c[:uid1]]] = 1
+    end
+    adj = Matrix.rows(adj_arr)
+    v, d, vi = adj.eigensystem
+    eig_v = v.column(g.size - 1)
+    eig = {}
+    g.each do |vertex|
+      eig[vertex] = eig_v.[](g.index(vertex)).round(2)
+    end
+    return eig
+  end
 end

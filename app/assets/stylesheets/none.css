@@ -22,3 +22,32 @@
     font-style: normal;
 
 }
+
+.trans{
+	-webkit-transition: all 0.5s ease-in-out;
+	-moz-transition: all 0.5s ease-in-out; 
+	-o-transition: all 0.5s ease-in-out; 
+	-ms-transition: all 0.5s ease-in-out; 
+}
+
+h3 {
+  margin: 0;
+  background-color: rgb(145,145,145); 
+  font-family: 'gotham_bookregular';
+}
+
+h3 a {
+  font-family: 'gotham_bookregular';
+  background: url("sprite.png") 15px 8px no-repeat;
+  display: block;
+  padding: 8px 0 3px 8px;
+  padding-left: 32px;
+  margin: 0;
+  color: #fff;
+  text-decoration: none;
+  font-weight: normal;
+  font-size:17px;
+}
+h3.open  { background: rgb(125,125,125); }
+h3.open a { background-position: 13px -30px; }
+h3 + div { padding: 10px; }
