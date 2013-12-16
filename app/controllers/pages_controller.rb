@@ -119,6 +119,9 @@ class PagesController < ApplicationController
           clu_other.push v
         end
       end
+      @connections.each do |c|
+        clu_graph.connect_mutually( c[:uid1], c[:uid2], 1 )
+      end
       @clu = bisection(clu_graph, degree(clu_graph), adjacency(clu_graph, @connections))
       l = @clu.values[0].length
       clu_other.each do |v|
