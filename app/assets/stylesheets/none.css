@@ -50,4 +50,4 @@ h3.group-title a {
 }
 h3.open  { background: rgb(125,125,125); }
 h3.open a { background-position: 13px -30px; }
-h3.group-title + div { padding: 10px; }
+h3 + div { padding: 10px; }
