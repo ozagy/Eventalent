@@ -10,6 +10,7 @@ class PagesController < ApplicationController
               "events"=>"SELECT eid, rsvp_status FROM event_member WHERE uid = me()",
               "details"=>"SELECT eid, name, description, creator, start_time, end_time FROM event WHERE eid IN (SELECT eid FROM  #events)",
               "creators"=>"SELECT uid, name FROM user WHERE uid IN (SELECT creator FROM #details)",
+              "pages"=>"SELECT page_id, name FROM page WHERE page_id IN (SELECT creator FROM #details)",
               "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()"
             }
     begin
@@ -25,13 +26,17 @@ class PagesController < ApplicationController
       @events = res['events']
       friends = res['friends']
       creators = res['creators']
+      pages = res['pages']
       details = res['details']
-      logger.info creators
+      pages.each do |p|
+        p['uid'] = p['page_id']
+        creators.push p
+      end
       @events.each do |e|
         detail = details.select{|d| d['eid'] == e['eid']}.first
         e['name'] = detail['name']
         e['description'] = detail['description']
-        logger.info e['creator'] = detail['creator']
+        e['creator'] = detail['creator']
         e['creator_name'] = creators.select{|c| c['uid'] == detail['creator']}.first['name']
         e['start_time'] = Time.parse(detail['start_time']).strftime "%Y-%m-%d %H:%M:%S %Z"
         e['end_time'] = Time.parse(detail['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" if detail['end_time']
@@ -54,6 +59,7 @@ class PagesController < ApplicationController
               "links"=>"select uid1, uid2 from friend where uid1 in (SELECT uid from #members) and uid2 in (SELECT uid from #members)",
               "event"=>"select name, description, creator, start_time, end_time, location from event where eid = "+ params[:id],
               "creator"=>"SELECT uid, name FROM user WHERE uid IN (SELECT creator FROM #event)",
+              "page"=>"SELECT page_id, name FROM page WHERE page_id IN (SELECT creator FROM #event)",
               "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()",
               "me" => "SELECT uid, name, sex, username from user where uid = "+ @current_user.uid, 
               "links_me" => "select uid1, uid2 from friend where uid1 = "+ @current_user.uid + " and uid2 in (SELECT uid from #members)",
@@ -72,8 +78,8 @@ class PagesController < ApplicationController
       @members = res['members']
       thumbnails = res['thumbnails']
       @event = res['event'][0]
-      @creator = res['creator'][0]
-      friends = res['friends']
+      @creator = res['creator'][0].nil? ? res['page'][0]:res['creator'][0]
+      friends = res['friends'] 
       @friends = friends.collect{|f| f['uid2'].to_i }
       ids = @members.collect{|m| m['uid']}
       links = res['links']
