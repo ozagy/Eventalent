@@ -30,13 +30,13 @@
 	-ms-transition: all 0.5s ease-in-out; 
 }
 
-h3 {
+h3.group-title {
   margin: 0;
   background-color: rgb(145,145,145); 
   font-family: 'gotham_bookregular';
 }
 
-h3 a {
+h3.group-title a {
   font-family: 'gotham_bookregular';
   background: url("sprite.png") 15px 8px no-repeat;
   display: block;
@@ -50,4 +50,4 @@ h3 a {
 }
 h3.open  { background: rgb(125,125,125); }
 h3.open a { background-position: 13px -30px; }
-h3 + div { padding: 10px; }
+h3.group-title + div { padding: 10px; }
