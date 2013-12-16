@@ -26,12 +26,12 @@ class PagesController < ApplicationController
       friends = res['friends']
       creators = res['creators']
       details = res['details']
-      
+      logger.info creators
       @events.each do |e|
         detail = details.select{|d| d['eid'] == e['eid']}.first
         e['name'] = detail['name']
         e['description'] = detail['description']
-        e['creator'] = detail['creator']
+        logger.info e['creator'] = detail['creator']
         e['creator_name'] = creators.select{|c| c['uid'] == detail['creator']}.first['name']
         e['start_time'] = Time.parse(detail['start_time']).strftime "%Y-%m-%d %H:%M:%S %Z"
         e['end_time'] = Time.parse(detail['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" if detail['end_time']
