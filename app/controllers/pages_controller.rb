@@ -2,7 +2,7 @@ require 'matrix'
 require 'assets/graph'
 
 class PagesController < ApplicationController
-  before_filter :current_user
+  before_filter :current_user, :except => [:help]
   def index
     user = User.find(session[:user_id])
     @api = Koala::Facebook::API.new(user.oauth_token)
