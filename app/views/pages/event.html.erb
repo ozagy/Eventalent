@@ -169,6 +169,60 @@ a {
 	top: -10px;
 	color:#ddd;
 }
+.sub-icon-div{
+	display:none;
+	position:absolute;
+	left:65px;
+	top:140px;
+}
+.slider-div{
+	position:absolute;
+	height:330px;
+	width:50px;
+	left:65px;
+	top:0px;
+	background-color:rgba(204, 204, 204, 0.7);
+	border-radius: 5px;
+	-moz-border-radius:5px;
+	-webkit-border-radius:5px;
+	margin: 0 0 20px 10px;
+	display:none;
+}
+.slide-track{
+	width:4px;
+	height:300px;
+	margin:15px 23px;
+	background-color:#ddd;
+}
+#slide-bar{
+	width: 20px;
+	height: 20px;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	position:absolute;
+	background-color:rgba(200,200,200,1);
+	-moz-box-shadow: 2px 1px 3px #333, inset -2px -1px 2px #aaa;
+	-webkit-box-shadow: 2px 1px 3px #333, inset -2px -1px 2px #aaa;
+	box-shadow: 2px 1px 3px #333, inset -2px -1px 2px #aaa;
+	-webkit-transition: background-color 0.3s ease-in-out;
+	-moz-transition: background-color 0.3s ease-in-out; 
+	-o-transition: background-color 0.3s ease-in-out; 
+	-ms-transition: background-color 0.3s ease-in-out;
+	border: 0px;
+	margin-left: -3px;
+}
+.slide-scale{
+	position:absolute;
+	left:10px;
+	top:15px;
+}
+.scale-dash{
+	height:2px;
+	width:10px;
+	margin-bottom:73px;
+	background-color:#ddd;
+}
 </style>
 <% end %>
 
@@ -302,6 +356,7 @@ a {
 			      sphere.friend = <% if @friends.include? m['uid'].to_i %> true <% else %> false <% end %>;
 			      sphere.eig = <%= @eig[m['uid']] %>;
 			      sphere.deg = <%= @deg[m['uid']] %>;
+			      sphere.clu = <%= @clu[m['uid']] %>;
 			      sphere.dis = <% if @dis[m['uid']] %>
 			      					<%= @dis[m['uid']] %>
 			      				<% else %>
@@ -545,28 +600,49 @@ a {
 						switch ($(this).attr('id'))
 						{
 							case 'gender':
+								$('.slider-div').fadeOut();
+								$('.sub-icon-div').fadeOut();
 								showGender();
 								break;
 							case 'distance':
+								$('.slider-div').fadeOut();
+								$('.sub-icon-div').fadeOut();
 								showDistance();
 								break;
 							case 'rank':
+								$('.slider-div').fadeOut();
 								showRank();
 								break;
 							case 'cluster':
+								$('.sub-icon-div').fadeOut();
 								showCluster();
 								break;
 						}
 					}
 					
 				});
+				$('.sub-toggle').click(function(){
+					if (!$(this).hasClass('active'))
+					{
+						$('.sub-toggle').removeClass('active');
+						$(this).addClass('active');
+						showRank();
+					}
+				})
 				$('.detail-tab').click(function(){
 					if ($('.detail-div').css('right') == '-300px')
 						showDetails();
 					else
 						hideDetails();
 				});
-						
+				$('#slide-track').slider({ orientation: "vertical", step: 1, value: 0, min:0, max: 4})	
+				$("#slide-track" ).find("a").attr('id', 'slide-bar');
+				$("#slide-track" ).slider({
+					change: function(e){
+						var level = $("#slide-track" ).slider('value');
+						showCluster(level);
+					}
+				});
 				appendList({'All':spheres});
 			});
 			
@@ -582,6 +658,8 @@ a {
 			function resetScene()
 			{
 				appendList({'All':spheres});
+				$('.slider-div').fadeOut();
+				$('.sub-icon-div').fadeOut();
 			}
 			
 			function showGender()
@@ -629,29 +707,63 @@ a {
 			
 			function showRank()
 			{
+				$('#sub-rank').fadeIn();
+				var type = $('#sub-rank').find('.active').attr('id');
 				var groups = {};
-				spheres_arr.sort(function(a, b) {
-		    		a = a.eig;
-				    b = b.eig;
-				    return a > b ? -1 : (a < b ? 1 : 0);
-				});
-				var current = Infinity;
-				var rank = 0;
-				var count = 0;
-				$.each(spheres_arr, function(i, v){
-					if (v.eig < current)
-					{
-						rank = count;
-						v.rank = ++rank;
-						current = v.eig;
-					}
-					else if( current - v.eig < 0.001 )
-					{
-						v.rank = rank;
-						current = v.eig;
-					}
-					count++;
-				})
+				if (type == 'eig')
+				{
+					spheres_arr.sort(function(a, b) {
+			    		a = a.eig;
+					    b = b.eig;
+					    return a > b ? -1 : (a < b ? 1 : 0);
+					});
+					var current = Infinity;
+					var rank = 0;
+					var count = 0;
+					$.each(spheres_arr, function(i, v){
+						if (v.eig < current)
+						{
+							rank = count;
+							v.rank = ++rank;
+							v.rank_value = v.eig;
+							current = v.eig;
+						}
+						else if( current - v.eig < 0.001 )
+						{
+							v.rank = rank;
+							v.rank_value = v.eig;
+							current = v.eig;
+						}
+						count++;
+					})
+				}
+				else if (type == 'degree')
+				{
+					spheres_arr.sort(function(a, b) {
+			    		a = a.deg;
+					    b = b.deg;
+					    return a > b ? -1 : (a < b ? 1 : 0);
+					});
+					var current = Infinity;
+					var rank = 0;
+					var count = 0;
+					$.each(spheres_arr, function(i, v){
+						if (v.deg < current)
+						{
+							rank = count;
+							v.rank = ++rank;
+							v.rank_value = v.deg;
+							current = v.deg;
+						}
+						else if( current - v.deg < 0.001 )
+						{
+							v.rank = rank;
+							v.rank_value = v.deg;
+							current = v.deg;
+						}
+						count++;
+					})
+				}
 				$.each(spheres_arr, function(i,v){
 					if (!groups['Rank '+v.rank])
 						groups['Rank '+v.rank] = [];
@@ -660,15 +772,37 @@ a {
 				appendList(groups);
 			}
 			
+			function showCluster()
+			{
+				$('.slider-div').fadeIn();
+				var level = $('.slide-track').slider('value');
+				var groups = {};
+				spheres_arr.sort(function(a, b) {
+		    		a = a.clu[level];
+				    b = b.clu[level];
+				    return a < b ? -1 : (a > b ? 1 : 0);
+				});
+				$.each(spheres_arr, function(i, v){
+					var group = v.clu[level];
+					if (group == 0) group = 'Isolated'
+					if (!groups['Group '+group])
+						groups['Group '+group] = [];
+					groups['Group '+group].push(v);
+				});
+				appendList(groups);
+			}
+			
 			function appendList(groups)
 			{
 				$('.tableview').html('');
+				var count = 0;
 				$.each(groups, function(k,g){
+					count++;
 					var color = getColor(k);
 					if (k.split(' ')[0] == 'Rank' )
 						$('.tableview').append('<h3 class="group-title open" group="'+ k.replace(' ','_') +'" style="background-color:#'+ color +'; display:none">'+ k +' ('+ Object.size(g) +')</h3><div class="group-div" id="' +k+'"><ul class="list"></ul></div>');
 					else
-						$('.tableview').append('<h3 class="group-title open" group="'+ k.replace(' ','_') +'" style="background-color:#'+ color +'">'+ k +' ('+ Object.size(g) +')</h3><div class="group-div" id="' +k+'"><ul class="list"></ul></div>');
+						$('.tableview').append('<h3 class="group-title" group="'+ k.replace(' ','_') +'" style="background-color:#'+ color +'">'+ k +' ('+ Object.size(g) +')</h3><div class="group-div" id="' +k+'"><ul class="list"></ul></div>');
 					valueNames = ['thumb', 'listname', 'gender', 'uid' ];
 					item = '<li class="trans items"><span style="display:none" class="uid"></span><div class="color-bar" style="background-color:#'+ color +'"></div><div class="thumb"></div><span class="listname"></span></br><span class="gender"></span>';
 					item_close = '</li>';
@@ -695,7 +829,7 @@ a {
 							v.sprite.material.color.setHex( parseInt('0x'+color,16) );
 						}
 						if (k.split(' ')[0] == 'Rank')
-							values.push({ thumb: '<img src="'+v.thumbnail+'"/>', listname: v.name, gender: v.sex, uid:v.uid, rank: 'Rank: '+v.rank, eig: v.eig });
+							values.push({ thumb: '<img src="'+v.thumbnail+'"/>', listname: v.name, gender: v.sex, uid:v.uid, rank: 'Rank: '+v.rank, eig: v.rank_value });
 						else
 							values.push({ thumb: '<img src="'+v.thumbnail+'"/>', listname: v.name, gender: v.sex, uid:v.uid });
 					});
@@ -733,8 +867,10 @@ a {
 			        	hideNameTag(0);
 			        	var id = $(this).find('.uid').html();
 			        	spheres[id].scale.set( 0.5, 0.5, 0.5 );
-			        })
+			        })  
 			   	});
+			   	if (count == 1)
+			        	$('.group-title').addClass('open');
 			   	new jQueryCollapse($(".tableview"), {
 		          open: function() {
 		            this.slideDown(150);
@@ -749,7 +885,7 @@ a {
 			{
 				var name = info.split(' ')[0];
 				var i = parseInt(info.split(' ')[1]);
-				var colors = ['ffa6a6', 'a6d0ff', 'b5ffa6', 'fff6a6', 'fca6ff', 'a6fdec', 'fdcda6', 'fdcda6', 
+				var colors = ['ffa6a6', 'a6d0ff', 'b5ffa6', 'fff6a6', 'fca6ff', 'a6fdec', 'fdcda6', 'b99476', 
 						'e5fda6', 'eaeaea', 'aebb8c', 'bb8c8c', 'b98cbb', '8c8cbb', '8cbb8f', 'bbb58c'];
 				switch ( name )
 				{
@@ -777,11 +913,11 @@ a {
 							return 'e0e7ff';
 						else
 							return '707070';
-					case 'Cluster':
+					case 'Group':
 						if (i < 16) 
 							return colors[i-1]; 
 						else
-							return 'ffffff';
+							return '707070';
 				}
 			}
 			Object.size = function(obj) {
@@ -821,6 +957,29 @@ a {
 			</div>
 			<div class='icon-div' id='back'>
 				<%= link_to (image_tag "icon-back.png", :class => 'icon trans', :title => 'Back to My Events List'), root_path %>
+			</div>
+			<div class='sub-icon-div' id='sub-rank'>
+				<div class='icon-div sub-toggle active' id='eig'>
+					<%= image_tag "icon-rank-eig.png", :class => 'icon trans', :title => 'Rank by Influence (Eigenvector Centrality)' %>
+				</div>
+				<div class='icon-div sub-toggle' id='degree'>
+					<%= image_tag "icon-rank-degree.png", :class => 'icon trans', :title => 'Rank by No. of Friends (Degree Centrality)' %>
+				</div>
+			</div>
+			<div class='slider-div' id='sub-cluster'>
+				<div class='slide-track' id='slide-track'></div>
+				<div class='slide-scale'>
+					<div class='scale-dash'>
+					</div>
+					<div class='scale-dash'>
+					</div>
+					<div class='scale-dash'>
+					</div>
+					<div class='scale-dash'>
+					</div>
+					<div class='scale-dash'>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class='detail-div trans'>
