@@ -8,7 +8,7 @@ class PagesController < ApplicationController
     @api = Koala::Facebook::API.new(user.oauth_token)
     query = {
               "events"=>"SELECT eid, rsvp_status FROM event_member WHERE uid = me()",
-              "details"=>"SELECT eid, name, description, creator, start_time, end_time FROM event WHERE eid IN (SELECT eid FROM  #events)",
+              "details"=>"SELECT eid, name, description, creator, start_time, end_time, attending_count FROM event WHERE eid IN (SELECT eid FROM  #events)",
               "creators"=>"SELECT uid, name FROM user WHERE uid IN (SELECT creator FROM #details)",
               "pages"=>"SELECT page_id, name FROM page WHERE page_id IN (SELECT creator FROM #details)",
               "friends"=>"SELECT uid2 FROM friend WHERE uid1 = me()"
@@ -42,6 +42,7 @@ class PagesController < ApplicationController
         e['end_time'] = Time.parse(detail['end_time']).strftime "%Y-%m-%d %H:%M:%S %Z" if detail['end_time']
         f_id = friends.collect{|f| f['uid2']}
         e['creator_friend'] = f_id.include? detail['creator']
+        e['attending_count'] = detail['attending_count']
       end
     end
   end
@@ -76,6 +77,10 @@ class PagesController < ApplicationController
     end
     if res
       @members = res['members']
+      if @members.size > 150
+        redirect_to root_path, :flash => { :alert  => "Sorry. The event you access has too many participants. We are not able to handle it for now." }
+        return false
+      end
       thumbnails = res['thumbnails']
       @event = res['event'][0]
       @creator = res['creator'][0].nil? ? res['page'][0]:res['creator'][0]
@@ -127,7 +132,6 @@ class PagesController < ApplicationController
       clu_other.each do |v|
         @clu[v] = Array.new(l){0}
       end
-      logger.info @clu
     end
     render layout: "none"
   end

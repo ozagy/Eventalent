@@ -50,12 +50,49 @@
 	color: #fff;
 	cursor:pointer;
 }
+.alert-shade{
+	height:100%;
+	width:100%;
+	position:fixed;
+	left:0px;
+	top:0px;
+	background-color:rgba(0,0,0,0.7);
+	display:none;
+}
+.alert-div{
+	font-family:"gotham_boldregular";
+	padding: 50px;
+	width:450px;
+	height:100px;
+	position:fixed;
+	left:50%;
+	top:50%;
+	margin-left: -250px;
+	margin-top: -125px;
+	background-color: #e1e7d4;
+	border-radius:8px;
+	-moz-border-radius:8px;
+	-webkit-border-radius:8px;
+	text-align:center;
+}
+.alert-div p{
+	font-size:20px;
+}
+.close-alert{
+	font-family:"gotham_bookregular";
+	font-size:16px;
+}
+#alert{
+	color:red;
+	font-family:"gotham_bookregular";
+}
 </style>
 <% end %>
 
 
 <div class='extentfull'>
   <div class='events_container'>
+  	<% if alert %><p id="alert"><%= alert %></p><% end %>
   	<h2 style='color:#666'>MY EVENTS</h2>
   	  <% if @events.nil? %>
   	    <p style='color:red'><%=@error%></p>
@@ -66,29 +103,56 @@
 		    <th>Name</th>
 		    <th>Creator</th>
 		    <th>Start Time</th>
+		    <th>Size</th>
 		  </tr>
 		
 		  <% @events.each do |event| %>
-			  <tr event='event/<%= event['eid'] %>' class='events_row'>
+			  <tr event='event/<%= event['eid'] %>' count='<%= event['attending_count'] %>' class='events_row'>
 			  	<td class='left'><%= event['rsvp_status'] %></td>
 			    <td><%= event['name'] %></td>
 			    <td><%='<b>' if event['creator_friend'] %><%= event['creator_name'] %><%='</b>' if event['creator_friend'] %></td>
-			    <td class='right'><%= event['start_time'] %></td>
+			    <td><%= event['start_time'] %></td>
+			    <td class='right'><%= event['attending_count'] %></td>
 			  </tr>
 		  <% end %>
 		</table>
 	  <% end %>
   </div>
+
+  <div class='alert-shade'>
+	<div class='alert-div'>
+		<p>
+			Sorry. This event has too many participants. We are not able to process it for now.
+		</p><br />
+		<button class="btn btn-primary btn-lg close-alert">
+		  Close
+		</button>
+
+	</div>
+  </div>
 </div>
+
+
 
 <script>
 (function() {
-  $(function() {
+  $(function(){
+  	setTimeout(function(){
+  		$('#alert').fadeOut();
+  	},5000);
     $('.events_row').click(function(){
+      if ( parseInt($(this).attr('count')) > 150)
+      {
+      	$('.alert-shade').fadeIn();
+      	return false
+      }
       $('.loading').fadeIn();
       var path = $(this).attr('event');
       window.location = path;
     });
+    $('.close-alert').click(function(){
+    	$('.alert-shade').fadeOut();
+    })
   });
 
 }).call(this);
